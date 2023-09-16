@@ -1,54 +1,80 @@
-// Import necessary libraries
 const express = require('express');
-const brain = require('brain.js');
-const axios = require('axios'); // For making HTTP requests to Haxe's API
 const cors = require('cors');
+const axios = require('axios');
+const tf = require('@tensorflow/tfjs-node');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-// Initialize a neural network
-const net = new brain.NeuralNetwork();
+
+const model = tf.sequential();
 
 // Define a function to fetch Haxe instructions from the API
 const fetchHaxeInstructions = async () => {
   try {
-    const response = await axios.get('https://api.haxe.org/'); // Replace with the actual Haxe API URL
-    return response.data.instructions; // Assuming the API returns instructions
+    const response = await axios.get('https://haxe-api-url.com'); // Replace with the actual Haxe API URL
+    if (response.status === 200) {
+      return response.data.instructions; // Assuming the API returns instructions
+    } else {
+      throw new Error('Failed to fetch Haxe instructions');
+    }
   } catch (error) {
-    console.error('Error fetching Haxe instructions:', error);
+    console.error('Error fetching Haxe instructions:', error.message);
     return [];
   }
 };
 
-// Define a function to train the neural network with Haxe instructions
-const trainNeuralNetwork = async () => {
+// Define a function to preprocess and prepare the training data
+const prepareTrainingData = async () => {
   const haxeInstructions = await fetchHaxeInstructions();
+  if (haxeInstructions.length === 0) {
+    throw new Error('No Haxe instructions available for training');
+  }
 
-  // Create a training data array based on the fetched instructions
-  const trainingData = haxeInstructions.map((instruction) => ({
-    input: { instruction }, // Use the Haxe instruction as input
-    output: { learned: true }, // You can adjust the output as needed
-  }));
+  const inputTensor = tf.tensor(haxeInstructions.map((instruction) => [instruction]));
+  const outputTensor = tf.tensor(haxeInstructions.map(() => [1])); // You can adjust the output as needed
 
-  // Train the neural network
-  net.train(trainingData);
+  return { inputTensor, outputTensor };
+};
+
+// Define a function to train the neural network with TensorFlow.js
+const trainNeuralNetwork = async () => {
+  try {
+    const { inputTensor, outputTensor } = await prepareTrainingData();
+
+    model.add(tf.layers.dense({ units: 1, inputShape: [1] }));
+    model.compile({ loss: 'meanSquaredError', optimizer: 'sgd' });
+
+    await model.fit(inputTensor, outputTensor, { epochs: 100 });
+
+    console.log('Model training complete');
+  } catch (error) {
+    console.error('Error training neural network:', error.message);
+  }
 };
 
 // Train the neural network when the server starts
 trainNeuralNetwork();
 
-// Define an API endpoint to make predictions
-app.get('/predict', (req, res) => {
-  const inputInstruction = req.query.instruction; // Adjust based on your API design
+app.get('/predict', async (req, res) => {
+  const inputInstruction = req.query.instruction;
 
-  // Use the trained neural network for predictions
-  const output = net.run({ instruction: inputInstruction });
+  if (!inputInstruction) {
+    return res.status(400).json({ error: 'Missing instruction parameter' });
+  }
 
-  res.json({ prediction: output });
+  try {
+    const inputTensor = tf.tensor([[inputInstruction]]);
+    const prediction = await model.predict(inputTensor).data();
+
+    res.json({ prediction: prediction[0] });
+  } catch (error) {
+    console.error('Prediction error:', error.message);
+    res.status(500).json({ error: 'Failed to make a prediction' });
+  }
 });
 
-// Start the Express.js server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
