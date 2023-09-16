@@ -1,13 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
+import Predictor from './Predictor';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <form>
+      <input type='text' id='helper'/>
+      <button type='submit' />
+    </form>
+    <Predictor />
   </React.StrictMode>
 );
 

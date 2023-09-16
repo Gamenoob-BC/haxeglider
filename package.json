@@ -1,11 +1,14 @@
 {
   "name": "haxeglider",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "concurrently": "^8.2.1",
+    "netlify-cli": "^16.3.3",
+    "nodemon": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
@@ -15,7 +18,12 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "make": "concurrently \"npm run serve\" \"npm run build\"",
+    "localize": "concurrently \"npm run serve\" \"npm start\"",
+    "deploy": "npm run make && netlify deploy &&",
+    "prodnet": "npm run make && netlify deploy --prod",
+    "serve": "nodemon server.js"
   },
   "eslintConfig": {
     "extends": [
