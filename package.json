@@ -20,7 +20,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "make": "concurrently \"npm run serve\" \"npm run build\"",
-    "deploy": "npm run make && netlify deploy &&",
+    "deploy": "npm run make && netlify deploy",
     "prodnet": "npm run make && netlify deploy --prod",
     "serve": "nodemon server.js"
   },
